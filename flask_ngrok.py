@@ -70,24 +70,27 @@ def _download_file(url):
     return download_path
 
 
-def start_ngrok(port):
+def start_ngrok(port, callback):
     ngrok_address = _run_ngrok(port)
+    if callback and callable(callback):
+        callback(ngrok_address)
     print(f" * Running on {ngrok_address}")
     print(f" * Traffic stats available on http://127.0.0.1:4040")
 
 
-def run_with_ngrok(app):
+def run_with_ngrok(app, callback=None):
     """
     The provided Flask app will be securely exposed to the public internet via ngrok when run,
     and the its ngrok address will be printed to stdout
     :param app: a Flask application object
+    :param callback: a callback function which accepts one parameter - ngrok_address
     :return: None
     """
     old_run = app.run
 
     def new_run(*args, **kwargs):
         port = kwargs.get('port', 5000)
-        thread = Timer(1, start_ngrok, args=(port,))
+        thread = Timer(1, start_ngrok, args=(port, callback))
         thread.setDaemon(True)
         thread.start()
         old_run(*args, **kwargs)
